@@ -9,7 +9,7 @@ with BSD license.
 """
 
 __author__  = 'NLUlite'
-__version__ = '0.1.0'
+__version__ = '0.0.8'
 __license__ = 'BSD'
 
 
@@ -372,6 +372,7 @@ class Wisdom:
         req = urllib2.Request(url, headers={'User-Agent' : "urrlib2 - NLUlite dummy browser"}) 
         page= urllib2.urlopen(req).read()
         parser = HTMLTemplateFactory().get(url)
+        page= page.decode('ascii','ignore')
         parser.feed(page)
         webtext = parser.get_all_text()
         webtext.decode('utf-8')
@@ -381,6 +382,7 @@ class Wisdom:
         req = urllib2.Request(url, headers={'User-Agent' : "urrlib2 - NLUlite dummy feeder"}) 
         page= urllib2.urlopen(req).read()
         page = unescape( page )
+        page= page.decode('ascii','ignore')
         feeder = FeedTemplateFactory().get(url)
         feeder.feed(page)        
         text = feeder.get_all_text()
