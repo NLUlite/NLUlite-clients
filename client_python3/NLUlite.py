@@ -9,7 +9,7 @@ released with BSD license.
 """
 
 __author__  = 'NLUlite'
-__version__ = '0.1.0'
+__version__ = '0.1.2'
 __license__ = 'BSD'
 
 ## Chech the version
@@ -262,6 +262,9 @@ class WisdomParameters:
         self.accuracy_level = 5
         self.solver_options = ''
         self.skip_presuppositions = ''
+        self.skip_solver = 'false'
+        self.add_data = 'true'
+        self.timeout = 10
 
     def set_num_answers(self, num):
         self.num_answers    = num
@@ -271,15 +274,12 @@ class WisdomParameters:
         self.solver_options = options
     def set_skip_presuppositions(self, options):
         self.skip_presuppositions = options
-
-    def get_num_answers(self):
-        return self.num_answers
-    def get_accuracy_level(self):
-        return self.accuracy_level
-    def get_solver_options(self):
-        return self.solver_options
-    def get_skip_presuppositions(self):
-        return self.skip_presuppositions
+    def set_skip_solver(self, options):
+        self.skip_solver = options
+    def set_add_data(self, options):
+        self.add_data = options
+    def set_timeout(self, options):
+        self.timeout = options
 
 
         
@@ -611,12 +611,20 @@ class ServerProxy:
         num_answers    = wp.get_num_answers()
         solver_options = wp.get_solver_options()
         skip_presuppositions = wp.get_skip_presuppositions()
+        skip_solver = wp.get_skip_solver()
+        add_data = wp.get_add_data()
+        timeout = wp.get_timeout()
         text = ('<wisdom_parameters ' 
-                + 'accuracy_level=' + str(accuracy_level) 
+                + ' accuracy_level=' + str(accuracy_level) 
                 + ' num_answers=' + str(num_answers) 
                 + ' solver_options=' + solver_options 
                 + ' skip_presuppositions=' + skip_presuppositions 
-                + ' ID=' + ID + '>')
+                + ' skip_solver=' + skip_solver 
+                + ' add_data=' + add_data 
+                + ' ID=' + ID
+                + ' timeout=' + str(timeout)
+                + '>'
+        )
         text += '<eof>'
         reply = self.__send(text)
         return reply
