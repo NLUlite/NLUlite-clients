@@ -246,9 +246,7 @@ def join_answers(answer_list) :
     Joins together and sorts a list of answers
     """
     answers = answer_list[0]
-    print answers.comment()
     for item in answer_list[1:] :
-        print item.comment()
         answers.join(item)
     return answers
 
@@ -314,11 +312,6 @@ class Wisdom:
         answer_elements= []
         if reply == "":
             return Answer(self)
-
-        ###
-        print reply
-        ###
-
         root= ET.fromstring(reply)
         qID= status= ''
         for child in root: 
