@@ -9,7 +9,7 @@ with BSD license.
 """
 
 __author__  = 'NLUlite'
-__version__ = '0.1.2'
+__version__ = '0.1.4'
 __license__ = 'BSD'
 
 
@@ -258,6 +258,7 @@ class WisdomParameters:
         self.solver_options = ''
         self.skip_presuppositions = ''
         self.skip_solver = 'false'
+        self.do_solver = 'false'
         self.add_data = 'true'
         self.timeout = 10
 
@@ -271,6 +272,10 @@ class WisdomParameters:
         self.skip_presuppositions = options
     def set_skip_solver(self, options):
         self.skip_solver = options
+    def set_do_solver(self, options):
+        self.do_solver = options
+    def get_do_solver(self):
+        return self.do_solver
     def set_add_data(self, options):
         self.add_data = options
     def set_timeout(self, options):
@@ -312,7 +317,18 @@ class Wisdom:
         answer_elements= []
         if reply == "":
             return Answer(self)
-        root= ET.fromstring(reply)
+            
+        root= ''
+
+        try:
+            root= ET.fromstring(reply)
+        except xml.etree.ElementTree.ParseError:
+            # If the answer is not well-formed, choose a default answer
+            answer= Answer(self)
+            answer.set_question_ID(self.ID + ':no_answer:' + str(answer_elements.__len__()) )
+            answer.status= ''
+            return answer            
+
         qID= status= ''
         for child in root: 
             if child.tag == 'qID':
@@ -618,6 +634,7 @@ class ServerProxy:
         solver_options = wp.get_solver_options()
         skip_presuppositions = wp.get_skip_presuppositions()
         skip_solver = wp.get_skip_solver()
+        do_solver = wp.get_do_solver()
         add_data = wp.get_add_data()
         timeout = wp.get_timeout()
         text = ('<wisdom_parameters ' 
@@ -626,6 +643,7 @@ class ServerProxy:
                 + ' solver_options=' + solver_options 
                 + ' skip_presuppositions=' + skip_presuppositions 
                 + ' skip_solver=' + skip_solver 
+                + ' do_solver=' + do_solver 
                 + ' add_data=' + add_data 
                 + ' ID=' + ID
                 + ' timeout=' + str(timeout)
