@@ -9,7 +9,7 @@ released with BSD license.
 """
 
 __author__  = 'NLUlite'
-__version__ = '0.1.4'
+__version__ = '0.1.6'
 __license__ = 'BSD'
 
 ## Chech the version
@@ -266,6 +266,7 @@ class WisdomParameters:
         self.do_solver = 'false'
         self.add_data = 'true'
         self.timeout = 10
+        self.fixed_time = 6
 
     def set_num_answers(self, num):
         self.num_answers    = num
@@ -285,6 +286,9 @@ class WisdomParameters:
         self.add_data = options
     def set_timeout(self, options):
         self.timeout = options
+    def set_fixed_time(self, options):
+        self.fixed_time = options
+
 
     def get_num_answers(self):
         return self.num_answers
@@ -300,6 +304,8 @@ class WisdomParameters:
         return self.add_data
     def get_timeout(self):
         return self.timeout
+    def get_fixed_time(self):
+        return self.fixed_time
 
         
 class Wisdom:
@@ -634,6 +640,7 @@ class ServerProxy:
         do_solver = wp.get_do_solver()
         add_data = wp.get_add_data()
         timeout = wp.get_timeout()
+        fixed_time = wp.get_fixed_time()
         text = ('<wisdom_parameters ' 
                 + ' accuracy_level=' + str(accuracy_level) 
                 + ' num_answers=' + str(num_answers) 
@@ -644,6 +651,7 @@ class ServerProxy:
                 + ' add_data=' + add_data 
                 + ' ID=' + ID
                 + ' timeout=' + str(timeout)
+                + ' fixed_time=' + str(fixed_time)
                 + '>'
         )
         text += '<eof>'

@@ -170,7 +170,7 @@ class Answer:
     """
     def __init__(self,wisdom):        
         self.answer_elements= []
-        self.question_ID= ''
+        self.question_ID= 'dummy_ID:no_answer:0'
         self.wisdom= wisdom
         self.status= ''
 
@@ -261,6 +261,7 @@ class WisdomParameters:
         self.do_solver = 'false'
         self.add_data = 'true'
         self.timeout = 10
+        self.fixed_time = 6
 
     def set_num_answers(self, num):
         self.num_answers    = num
@@ -280,6 +281,8 @@ class WisdomParameters:
         self.add_data = options
     def set_timeout(self, options):
         self.timeout = options
+    def set_fixed_time(self, options):
+        self.fixed_time = options
 
 
     def get_num_answers(self):
@@ -296,6 +299,8 @@ class WisdomParameters:
         return self.add_data
     def get_timeout(self):
         return self.timeout
+    def get_fixed_time(self):
+        return self.fixed_time
 
         
 class Wisdom:
@@ -322,7 +327,7 @@ class Wisdom:
 
         try:
             root= ET.fromstring(reply)
-        except xml.etree.ElementTree.ParseError:
+        except ET.ParseError:
             # If the answer is not well-formed, choose a default answer
             answer= Answer(self)
             answer.set_question_ID(self.ID + ':no_answer:' + str(answer_elements.__len__()) )
@@ -478,6 +483,9 @@ class Wisdom:
             raise TypeError('The wisdom.set_wisdom_parameters attribute must be set to an instance of NLUlite.WisdomParameters')        
         self.server.set_wisdom_parameters(self.ID, wp);
 
+    def is_avaible(self):
+        return self.server.is_avaible();
+
 class Writer:
     """
     Writer class
@@ -511,6 +519,7 @@ class ServerProxy:
         self.port = port
         self.wisdom_list= []
         self.published_list= []
+        self.timeout = -1         # timeout for connecting to the server (-1 = socket default) 
         reply= self.__send('<test>\n<eof>')
         if reply != '<ok>':
             raise RuntimeError('No valid server seems to be running.')
@@ -637,6 +646,7 @@ class ServerProxy:
         do_solver = wp.get_do_solver()
         add_data = wp.get_add_data()
         timeout = wp.get_timeout()
+        fixed_time = wp.get_fixed_time()
         text = ('<wisdom_parameters ' 
                 + ' accuracy_level=' + str(accuracy_level) 
                 + ' num_answers=' + str(num_answers) 
@@ -647,6 +657,7 @@ class ServerProxy:
                 + ' add_data=' + add_data 
                 + ' ID=' + ID
                 + ' timeout=' + str(timeout)
+                + ' fixed_time=' + str(fixed_time)
                 + '>'
         )
         text += '<eof>'
@@ -685,6 +696,14 @@ class ServerProxy:
         self.wisdom_list.append(ID)
         return ID
 
+    def is_available(self):
+        text = '<is_available>\n'
+        text += '<eof>'
+        reply = self.__send(text)
+        if reply == '<ok>':
+            return True
+        return False
+
 
     def __send(self, text): 
         """
@@ -692,6 +711,8 @@ class ServerProxy:
         and return the 'answer'.
         """
         sock= socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if self.timeout != -1:
+            sock.settimeout(self.timeout) # timeout for connection
         sock.connect( (self.ip,self.port) )
 # Send the question to the server
         totalsent= 0
@@ -708,6 +729,9 @@ class ServerProxy:
                 break
             answer += chunk
         return answer
+
+    def set_timeout(self, timeout):
+        self.timeout = timeout
 
 class Match:
     """
