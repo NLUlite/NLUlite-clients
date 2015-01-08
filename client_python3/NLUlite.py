@@ -9,7 +9,7 @@ released with BSD license.
 """
 
 __author__  = 'NLUlite'
-__version__ = '0.1.6'
+__version__ = '0.1.8'
 __license__ = 'BSD'
 
 ## Chech the version
@@ -265,8 +265,15 @@ class WisdomParameters:
         self.skip_solver = 'false'
         self.do_solver = 'false'
         self.add_data = 'true'
+        self.word_intersection = 'true'
+        self.use_pertaynims = 'true'
+        self.use_synonyms = 'false'
+        self.num_hyponyms = 2
         self.timeout = 10
         self.fixed_time = 6
+        self.max_refs = 3000000
+        self.max_candidates_refs = 50
+        self.max_candidates = 50
 
     def set_num_answers(self, num):
         self.num_answers    = num
@@ -280,15 +287,26 @@ class WisdomParameters:
         self.skip_solver = options
     def set_do_solver(self, options):
         self.do_solver = options
-    def get_do_solver(self):
-        return self.do_solver
     def set_add_data(self, options):
         self.add_data = options
     def set_timeout(self, options):
         self.timeout = options
     def set_fixed_time(self, options):
         self.fixed_time = options
-
+    def set_word_intersection(self, options):
+        self.word_intersection = options
+    def set_use_pertaynims(self, options):
+        self.use_pertaynims = options
+    def set_max_refs(self, options):
+        self.max_refs = options
+    def set_max_candidates_refs(self, options):
+        self.max_candidates_refs = options
+    def set_max_candidates(self, options):
+        self.max_candidates = options
+    def set_use_synonyms(self, options):
+        self.use_synonyms = options
+    def set_num_hyponyms(self, options):
+        self.num_hyponyms = options
 
     def get_num_answers(self):
         return self.num_answers
@@ -300,12 +318,28 @@ class WisdomParameters:
         return self.skip_presuppositions
     def get_skip_solver(self):
         return self.skip_solver
+    def get_do_solver(self):
+        return self.do_solver
     def get_add_data(self):
         return self.add_data
     def get_timeout(self):
         return self.timeout
     def get_fixed_time(self):
         return self.fixed_time
+    def get_word_intersection(self):
+        return self.word_intersection
+    def get_use_pertaynims(self):
+        return self.use_pertaynims
+    def get_max_refs(self):
+        return self.max_refs
+    def get_max_candidates_refs(self):
+        return self.max_candidates_refs
+    def get_max_candidates(self):
+        return self.max_candidates
+    def get_use_synonyms(self):
+        return self.use_synonyms
+    def get_num_hyponyms(self):
+        return self.num_hyponyms
 
         
 class Wisdom:
@@ -637,21 +671,35 @@ class ServerProxy:
         solver_options = wp.get_solver_options()
         skip_presuppositions = wp.get_skip_presuppositions()
         skip_solver = wp.get_skip_solver()
-        do_solver = wp.get_do_solver()
-        add_data = wp.get_add_data()
-        timeout = wp.get_timeout()
-        fixed_time = wp.get_fixed_time()
+        do_solver   = wp.get_do_solver()
+        add_data    = wp.get_add_data()
+        timeout     = wp.get_timeout()
+        fixed_time  = wp.get_fixed_time()
+        max_refs            = wp.get_max_refs()
+        max_candidates_refs = wp.get_max_candidates_refs()
+        max_candidates      = wp.get_max_candidates()
+        word_intersection = wp.get_word_intersection()
+        use_pertaynims    = wp.get_use_pertaynims()
+        use_synonyms      = wp.get_use_synonyms()
+        num_hyponyms     = wp.get_num_hyponyms()
         text = ('<wisdom_parameters ' 
                 + ' accuracy_level=' + str(accuracy_level) 
-                + ' num_answers=' + str(num_answers) 
+                + ' num_answers='    + str(num_answers) 
                 + ' solver_options=' + solver_options 
                 + ' skip_presuppositions=' + skip_presuppositions 
                 + ' skip_solver=' + skip_solver 
-                + ' do_solver=' + do_solver 
-                + ' add_data=' + add_data 
-                + ' ID=' + ID
-                + ' timeout=' + str(timeout)
-                + ' fixed_time=' + str(fixed_time)
+                + ' do_solver='   + do_solver 
+                + ' add_data='    + add_data 
+                + ' ID='          + ID
+                + ' timeout='     + str(timeout)
+                + ' fixed_time='  + str(fixed_time)
+                + ' max_refs='    + str(max_refs)
+                + ' max_candidates_refs=' + str(max_candidates_refs)
+                + ' max_candidates='      + str(max_candidates)
+                + ' word_intersection='   + word_intersection
+                + ' use_pertaynims='      + use_pertaynims
+                + ' use_synonyms='        + use_synonyms
+                + ' num_hyponyms='        + str(num_hyponyms)
                 + '>'
         )
         text += '<eof>'
