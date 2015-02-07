@@ -18,7 +18,11 @@ import xml.etree.ElementTree as ET
 import string, urllib2
 from HTMLParser import HTMLParser
 from xml.sax.saxutils import unescape
-import os
+import os, sys
+
+reload(sys)  
+sys.setdefaultencoding('utf8')
+
 
 class NLUliteHTMLParser(HTMLParser):
     """
