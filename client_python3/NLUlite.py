@@ -9,7 +9,7 @@ released with BSD license.
 """
 
 __author__  = 'NLUlite'
-__version__ = '0.1.8'
+__version__ = '0.1.10'
 __license__ = 'BSD'
 
 ## Chech the version
@@ -95,6 +95,7 @@ class NLUliteFeedParser(HTMLParser):
         HTMLParser.__init__(self)
         self.current_tag = ''
         self.all_text = ''
+        self.link = ''
 
     def handle_starttag(self, tag, attrs):
         self.current_tag= tag
@@ -102,6 +103,9 @@ class NLUliteFeedParser(HTMLParser):
     def handle_data(self, data):
         tag= self.current_tag
         if tag == 'title':
+            data.replace("<![CDATA[", " ")
+            data.replace("]]>"," ")
+            
             self.all_text += '[% feed %]'
             self.all_text += data + ' \r\n\r\n'
         if tag == 'description':
@@ -255,7 +259,6 @@ def join_answers(answer_list) :
         answers.join(item)
     return answers
 
-        
 class WisdomParameters:
     def __init__(self):
         self.num_answers    = 10
@@ -268,12 +271,15 @@ class WisdomParameters:
         self.word_intersection = 'true'
         self.use_pertaynims = 'true'
         self.use_synonyms = 'false'
+        self.use_hyponyms = 'true'
         self.num_hyponyms = 2
         self.timeout = 10
         self.fixed_time = 6
         self.max_refs = 3000000
         self.max_candidates_refs = 50
         self.max_candidates = 50
+        self.load_clauses   = 'true'
+        self.implicit_verb  = 'false'
 
     def set_num_answers(self, num):
         self.num_answers    = num
@@ -305,8 +311,15 @@ class WisdomParameters:
         self.max_candidates = options
     def set_use_synonyms(self, options):
         self.use_synonyms = options
+    def set_use_hyponyms(self, options):
+        self.use_hyponyms = options
     def set_num_hyponyms(self, options):
         self.num_hyponyms = options
+    def set_load_clauses(self, options):
+        self.load_clauses = options
+    def set_implicit_verb(self, options):
+        self.implicit_verb = options
+
 
     def get_num_answers(self):
         return self.num_answers
@@ -338,8 +351,14 @@ class WisdomParameters:
         return self.max_candidates
     def get_use_synonyms(self):
         return self.use_synonyms
+    def get_use_hyponyms(self):
+        return self.use_hyponyms
     def get_num_hyponyms(self):
         return self.num_hyponyms
+    def get_load_clauses(self):
+        return self.load_clauses
+    def get_implicit_verb(self):
+        return self.implicit_verb
 
         
 class Wisdom:
@@ -441,6 +460,7 @@ class Wisdom:
         parser = HTMLTemplateFactory().get(url)
         parser.feed( page )
         webtext = parser.get_all_text()
+        webtext = '[% '+url+' %]\n' + webtext
         self.add(webtext)
 
     def add_feed(self, url):
@@ -451,6 +471,7 @@ class Wisdom:
         feeder = FeedTemplateFactory().get(url)
         feeder.feed(page)        
         text = feeder.get_all_text()
+        text = '[% '+url+' %]\n' + text
         self.add(text)
 
     def save(self, filename):
@@ -681,7 +702,10 @@ class ServerProxy:
         word_intersection = wp.get_word_intersection()
         use_pertaynims    = wp.get_use_pertaynims()
         use_synonyms      = wp.get_use_synonyms()
-        num_hyponyms     = wp.get_num_hyponyms()
+        use_hyponyms      = wp.get_use_hyponyms()
+        num_hyponyms      = wp.get_num_hyponyms()
+        load_clauses      = wp.get_load_clauses()
+        implicit_verb     = wp.get_implicit_verb()
         text = ('<wisdom_parameters ' 
                 + ' accuracy_level=' + str(accuracy_level) 
                 + ' num_answers='    + str(num_answers) 
@@ -699,12 +723,15 @@ class ServerProxy:
                 + ' word_intersection='   + word_intersection
                 + ' use_pertaynims='      + use_pertaynims
                 + ' use_synonyms='        + use_synonyms
+                + ' use_hyponyms='        + use_hyponyms
                 + ' num_hyponyms='        + str(num_hyponyms)
+                + ' implicit_verb='       + implicit_verb
                 + '>'
         )
         text += '<eof>'
         reply = self.__send(text)
         return reply
+
 
     def erase_exported(self, publish_key, password= ""):
         text = '<erase_published' + ' key=' + publish_key + ' passwd=' + password + '>'
