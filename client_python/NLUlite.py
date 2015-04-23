@@ -9,7 +9,7 @@ with BSD license.
 """
 
 __author__  = 'NLUlite'
-__version__ = '0.1.10'
+__version__ = '0.1.12'
 __license__ = 'BSD'
 
 
@@ -255,6 +255,7 @@ def join_answers(answer_list) :
     answers = answer_list[0]
     for item in answer_list[1:] :
         answers.join(item)
+
     return answers
 
         
@@ -361,6 +362,91 @@ class WisdomParameters:
 
 
 
+def process_query_reply(wisdom,reply):
+    """
+    Auxiliary function for the classes Wisdom and Wikidata.
+    It processes the reply from the server.
+    """
+
+    answer_elements= []
+    if reply == "":
+        return Answer(self)
+            
+    root= ''
+
+    try:
+        root= ET.fromstring(reply)
+    except ET.ParseError:
+        # If the answer is not well-formed, choose a default answer
+        answer= Answer(wisdom)
+        answer.set_question_ID(wisdom.ID + ':no_answer:' + str(answer_elements.__len__()) )
+        answer.status= ''
+        return answer            
+
+    qID= status= ''
+    for child in root: 
+        if child.tag == 'qID':
+            qID= child.text
+            continue
+        if child.tag == 'status':
+            status= child.text
+            continue
+
+        text=''
+        link=''
+        drs=''
+        weight=1
+        pairs= []
+        rules= []
+            
+        for c2 in child:
+            if c2.tag == 'text':
+                text= c2.text
+            if c2.tag == 'link':
+                link= c2.text
+            if c2.tag == 'drs':
+                drs= c2.text
+            if c2.tag == 'weight':
+                weight= c2.text
+            if c2.tag == 'data':
+                for c3 in c2:    # <dataitem>
+                    WP= name= ''
+                    for c4 in c3:
+                        if c4.tag == 'WP':
+                            WP= c4.text
+                        if c4.tag == 'name':
+                            name= c4.text
+                    pairs.append( QPair(WP,name) )
+            if c2.tag == 'rules':
+                for c3 in c2:   # <ruleitem>
+                    rule = Rule()                        
+                    for c4 in c3:
+                        if c4.tag == 'text':
+                            rule.text = c4.text
+                        if c4.tag == 'link':
+                            rule.description= c4.text
+                    rules.append( rule )
+
+        answ= AnswerElement()
+        answ.text   = text
+        answ.description = link
+        answ.drs    = drs
+        answ.weight = weight
+        answ.pairs  = pairs
+        answ.rules  = rules
+        answ.wisdom = wisdom
+        answer_elements.append( answ )
+            
+    answer= Answer(wisdom)
+    answer.set_elements(answer_elements)
+    answer.set_question_ID(wisdom.ID + ':' + qID.rstrip().lstrip() + ':' + str(answer_elements.__len__()) )
+    answer.status= status
+
+    return answer
+
+
+
+
 class Wisdom:
     """
     Process the wisdom
@@ -373,84 +459,7 @@ class Wisdom:
 
     def __match_drs_with_text__(self,drs,question):
         reply = self.server.match_drs(drs,question,self.ID)
-        answer= self.__process_query_reply__(reply)
-        return answer
-
-    def __process_query_reply__(self,reply):
-        answer_elements= []
-        if reply == "":
-            return Answer(self)
-            
-        root= ''
-
-        try:
-            root= ET.fromstring(reply)
-        except ET.ParseError:
-            # If the answer is not well-formed, choose a default answer
-            answer= Answer(self)
-            answer.set_question_ID(self.ID + ':no_answer:' + str(answer_elements.__len__()) )
-            answer.status= ''
-            return answer            
-
-        qID= status= ''
-        for child in root: 
-            if child.tag == 'qID':
-                qID= child.text
-                continue
-            if child.tag == 'status':
-                status= child.text
-                continue
-
-            text=''
-            link=''
-            drs=''
-            weight=1
-            pairs= []
-            rules= []
-            
-            for c2 in child:
-                if c2.tag == 'text':
-                    text= c2.text
-                if c2.tag == 'link':
-                    link= c2.text
-                if c2.tag == 'drs':
-                    drs= c2.text
-                if c2.tag == 'weight':
-                    weight= c2.text
-                if c2.tag == 'data':
-                    for c3 in c2:    # <dataitem>
-                        WP= name= ''
-                        for c4 in c3:
-                            if c4.tag == 'WP':
-                                WP= c4.text
-                            if c4.tag == 'name':
-                                name= c4.text
-                        pairs.append( QPair(WP,name) )
-                if c2.tag == 'rules':
-                    for c3 in c2:   # <ruleitem>
-                        rule = Rule()                        
-                        for c4 in c3:
-                            if c4.tag == 'text':
-                                rule.text = c4.text
-                            if c4.tag == 'link':
-                                rule.description= c4.text
-                        rules.append( rule )
-
-            answ= AnswerElement()
-            answ.text   = text
-            answ.description = link
-            answ.drs    = drs
-            answ.weight = weight
-            answ.pairs  = pairs
-            answ.rules  = rules
-            answ.wisdom = self
-            answer_elements.append( answ )
-            
-        answer= Answer(self)
-        answer.set_elements(answer_elements)
-        answer.set_question_ID(self.ID + ':' + qID.rstrip().lstrip() + ':' + str(answer_elements.__len__()) )
-        answer.status= status
-
+        answer= process_query_reply(self, reply)
         return answer
 
     def add(self, text):    
@@ -513,13 +522,18 @@ class Wisdom:
         reply = self.server.load_wisdom(data, self.ID);
 
     def ask(self, question):
-        reply = self.server.query(question, self.ID)
-        answer= self.__process_query_reply__(reply)
+        if isinstance(question, Wisdom):
+            reply = self.server.wisdom_query(question, self.ID, question.ID)            
+        else:
+            reply = self.server.query(question, self.ID)
+        answer= process_query_reply(self, reply)
         return answer
+
+
 
     def match(self, question):
         reply = self.server.match(question, self.ID)
-        answer= self.__process_query_reply__(reply)
+        answer= process_query_reply(self, reply)
         return answer
 
     def export_to_server(self,key,password="",timer=-1):
@@ -551,8 +565,8 @@ class Writer:
     Writer class
     """
     def __init__(self, wisdom):
-        if not isinstance(wisdom, Wisdom):
-            raise TypeError('The wisdom attribute must be set to an instance of NLUlite.Wisdom')
+        if not isinstance(wisdom, Wisdom) and not isinstance(wisdom, Wikidata):
+            raise TypeError('The wisdom attribute must be set to an instance of NLUlite.Wisdom or NLUlite.wikidata')
         self.server = wisdom.server
         reply= self.server.get_new_writer_ID(wisdom.ID)
         self.ID= reply
@@ -568,7 +582,6 @@ class Writer:
             reply= self.server.writer_write_answer(self.ID, answer.question_ID)
             return reply
         raise TypeError('The answer attribute must be set to an instance of NLUlite.Anwer or NLUlite.AnswerElement')
-
             
 class ServerProxy:
     """
@@ -618,6 +631,20 @@ class ServerProxy:
     def query(self, data, ID):
         text = '<question ID=' + ID + '>'
         text += data
+        text += '<eof>'
+        reply = self.__send(text)
+        return reply
+
+    def wikidata_query(self, data, ID):
+        text = '<wikidata_question ID=' + ID + '>'
+        text += data
+        text += '<eof>'
+        reply = self.__send(text)
+        return reply
+
+    def wisdom_query(self, data, ID, from_ID):
+        text = '<wisdom_question ID=' + ID + ' from_ID=' + from_ID + '>'
+        text += '\n'
         text += '<eof>'
         reply = self.__send(text)
         return reply
@@ -768,6 +795,14 @@ class ServerProxy:
         self.wisdom_list.append(ID)
         return ID
 
+    def get_new_wikidata_ID(self):
+        text = '<new_wikidata>\n'
+        text += '<eof>'
+        ID = self.__send(text)
+        self.wisdom_list.append(ID)
+        return ID
+
+
     def set_num_threads(self, num_threads):
         text = '<server threads=' + str(num_threads) +'>\n'
         text += '<eof>'
@@ -854,3 +889,25 @@ class Commands:
             match.__execute__(self.wisdom)
             
             
+
+class Wikidata:
+    """
+    Answer the question through a query to Wikidata.
+
+    It connects to the NLUlite server to transform natural language 
+    into a Wikidata query.
+    """
+    def __init__(self,server):
+        if not isinstance(server, ServerProxy):
+            raise TypeError('The server attribute must be set to an instance of NLUlite.ServerProxy')
+        self.server= server
+        reply   = self.server.get_new_wikidata_ID()
+        if reply == "<error>":
+            raise TypeError('You must start the server with the --wikidata option')        
+        self.ID = reply
+
+    def ask(self,question):        
+        reply = self.server.wikidata_query(question, self.ID)
+        answer= process_query_reply(self,reply)
+        return answer
+        
